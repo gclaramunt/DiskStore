@@ -43,6 +43,7 @@ class SimpleDiskStoreTest extends Specification {
   "The SimpleDiskStore get" should {
 
     /*
+
     // Alternate null behaviour
     "throw an exception for the null key" in {
       store.get(null) should throwA[Exception]
