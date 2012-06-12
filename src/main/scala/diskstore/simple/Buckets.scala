@@ -4,6 +4,8 @@ import scala.collection._
 import java.io._
 import scala.Array
 import java.math.BigInteger
+import diskstore.util.{IO, ByteArrayIO}
+import annotation.tailrec
 
 
 /**
@@ -13,7 +15,7 @@ import java.math.BigInteger
 
 case class Buckets(dir:File, name:String, bucketSizeFactor:Int) {
 
-  private[this] var bucketOSMap = mutable.Map[String, DataOutputStream]()
+  private[this] var bucketOSMap = Map[String, DataOutputStream]()
   val zero="ZERO"
 
   def bucketName(id:String)= "%s%s" format (name,id)
@@ -44,13 +46,67 @@ case class Buckets(dir:File, name:String, bucketSizeFactor:Int) {
   }
 
   def bucketOutputStream(bId: String, forAppend:Boolean=false) = bucketOSMap.getOrElse(bId, {
-    val newOS = new DataOutputStream(new FileOutputStream(file(bId),forAppend))
+    val newOS = IO.newDataOutputStream(file(bId),forAppend)
     bucketOSMap += (bId -> newOS)
     newOS
   })
 
-  def flush() = bucketOSMap.values.map(_.flush())
+  def flush() = {
+    bucketOSMap.values.map(_.flush())
+    recoveryMark()
+  }
 
-  def close() = bucketOSMap.values.map(_.close())
+  def close() = {
+    flush()
+    bucketOSMap.values.map(_.close())
+    recoveryStrm.close()
+  }
+
+  val recoveryFile=new File(dir,".recovery-%s". format(name))
+  val recoveryStrm = IO.newDataOutputStream(recoveryFile, forAppend = true)
+
+  private def recoveryMark() {
+    bucketOSMap.keys.foreach( k => {
+      println("wrote %s %s" format (bucketName(k),file(k).length))
+        //write bucket
+        ByteArrayIO.write(bucketName(k).getBytes,recoveryStrm)
+        //write position on bucket
+        recoveryStrm.writeLong(file(k).length)
+      }
+    )
+    recoveryStrm.flush()
+  }
+
+  private def readRecoveryData()=  {
+
+    @tailrec
+    def readRecoveryRec(is:DataInputStream, bucketPos:Map[String,Long]):Map[String,Long] = {
+      val posOfBucket:Option[(String,Long)] =
+        for {
+          bucket <- ByteArrayIO.read(is)
+          pos    <- ByteArrayIO.maybeEof(Some(is.readLong()))
+        } yield (new String(bucket) -> pos)
+      //just for TCO
+      if ( posOfBucket.isEmpty)
+        bucketPos
+      else
+        readRecoveryRec(is, bucketPos + posOfBucket.get )
+    }
+
+    IO.withDataInputStream(recoveryFile) { readRecoveryRec(_, Map()) }
+  }
+
+  def recovery() = {
+    val sizes = readRecoveryData()
+    //optionally filter only the update date > recoveryFile update date
+    sizes.foreach( truncateFile )
+  }
+
+  private def truncateFile(t:(String,Long)){
+    val (bucket, size)=t
+    val raf=new RandomAccessFile(bucket,"rws")
+    raf.setLength(size)
+    raf.close()
+  }
 
 }

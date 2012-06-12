@@ -21,8 +21,6 @@ class BucketsTest extends Specification with BeforeExample with AfterExample {
   }
 
 
-
-
   "bucketId" should {
 
     "generate the hex string from the byte array without the last n bytes" in {

@@ -94,4 +94,28 @@ class SimpleDiskStoreTest extends Specification {
     }
   }
 
+  "recovery" should {
+    "store different values" in {
+
+      //
+      new Object{
+        val store =SimpleDiskStoreSource("test/diskstore-test/test-recovery")
+        store.put(Array(1.toByte),Array(2.toByte))
+        store.put(Array(3.toByte),Array(4.toByte))
+        store.flush()
+        store.put(Array(5.toByte),Array(3.toByte))
+
+        //let's blow up
+        store.put(Array[Byte](1),null) should throwA[NullPointerException]
+      }
+
+      val store =SimpleDiskStoreSource("test/diskstore-test/test-recovery")
+      store.get(Array(1.toByte)).get===(Array(2.toByte))
+      store.get(Array(3.toByte)).get===(Array(4.toByte))
+      //store.get(Array(5.toByte)).get===None
+    }
+  }
+
+
+
 }

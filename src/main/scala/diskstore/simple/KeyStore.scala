@@ -23,6 +23,7 @@ case class KeyStore(buckets:Buckets) {
 
   def loadBucket(bucketId:String):SortedMap[Array[Byte],Ref]={
 
+    //TODO generalize data input stream recursion into (another) iteratee (see Buckets.readRecoveryRec )
     @tailrec
     def loadBucketRec(bucket:SortedMap[Array[Byte],Ref],dis:DataInputStream):SortedMap[Array[Byte],Ref] = {
       val key=ByteArrayIO.read(dis)

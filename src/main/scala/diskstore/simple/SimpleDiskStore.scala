@@ -24,6 +24,9 @@ class SimpleDiskStore(name:String,keysBucketFactor:Int=8,valuesBucketFactor:Int=
   private val keyStore = KeyStore(Buckets(dir,"KEYS",keysBucketFactor))
   private val valueStore= ValuesStore(Buckets(dir,"VALUES",valuesBucketFactor))
 
+  keyStore.buckets.recovery()
+  valueStore.buckets.recovery()
+
 
   def put(key: Array[Byte], value: Array[Byte]) {
     //find the value or store it and get a pointer to it
@@ -34,13 +37,13 @@ class SimpleDiskStore(name:String,keysBucketFactor:Int=8,valuesBucketFactor:Int=
   def get(key: Array[Byte]): Option[Array[Byte]] = keyStore.read(key).flatMap(pos =>valueStore.read(pos))
 
   def flush() {
-    valueStore.flush()
     keyStore.buckets.flush()
+    valueStore.buckets.flush()
   }
 
   def close() {
-    valueStore.close()
     keyStore.buckets.close()
+    valueStore.buckets.close()
   }
 
   /*

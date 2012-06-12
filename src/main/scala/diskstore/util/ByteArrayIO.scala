@@ -16,6 +16,9 @@ object IO{
   private def newDataInputStream(file: File) =
     new DataInputStream(new BufferedInputStream(new FileInputStream(file)))
 
+  def newDataOutputStream(file: File, forAppend:Boolean = false) =
+    new DataOutputStream(new FileOutputStream(file,forAppend))
+
   /**
    * Executes a read function with a DataInputStream and then closes it
    * @param file file to read
@@ -32,6 +35,7 @@ object IO{
     }
   }
 }
+
 
 object ByteArrayIO {
 
@@ -56,18 +60,28 @@ object ByteArrayIO {
    * @return Optional byte array
    */
   def read(readStream: DataInputStream): Option[Array[Byte]] = {
-    try {
+    maybeEof {
       val size = readStream.readInt()
       if (size > 0) {
         val data = new Array[Byte](size)
         if (readStream.read(data) == -1) None
         else Some(data)
       } else None
-    } catch {
-      case e: EOFException => None
     }
   }
 
+  /**
+   * Evaluates a function that might throw EOF and returns none in that case
+   * @param f function to evaluate
+   * @tparam T return type of the function
+   * @return result of f or None if EOF
+   */
+  def maybeEof[T](f: =>Option[T]):Option[T]=
+    try {
+      f
+    }catch {
+      case e: EOFException => None
+    }
 
 }
 

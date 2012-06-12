@@ -15,17 +15,7 @@ case class Ref(bucket:String,pos:Long)
 
 case class ValuesStore(buckets:Buckets) {
 
-
-
-  val positions = mutable.Map[String, Long]()
-
-  def flush(){
-    buckets.flush()
-  }
-
-  def close(){
-    buckets.close()
-  }
+  var positions = mutable.Map[String, Long]()
 
   /**
    * Writes the length and the data of the array in the current pos,
