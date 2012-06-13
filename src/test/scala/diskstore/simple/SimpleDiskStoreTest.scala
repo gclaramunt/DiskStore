@@ -43,7 +43,6 @@ class SimpleDiskStoreTest extends Specification {
   "The SimpleDiskStore get" should {
 
     /*
-
     // Alternate null behaviour
     "throw an exception for the null key" in {
       store.get(null) should throwA[Exception]
@@ -112,7 +111,7 @@ class SimpleDiskStoreTest extends Specification {
       val store =SimpleDiskStoreSource("test/diskstore-test/test-recovery")
       store.get(Array(1.toByte)).get===(Array(2.toByte))
       store.get(Array(3.toByte)).get===(Array(4.toByte))
-      //store.get(Array(5.toByte)).get===None
+      //store.get(Array(5.toByte))===None
     }
   }
 

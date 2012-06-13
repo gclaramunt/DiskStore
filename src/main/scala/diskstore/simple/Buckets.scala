@@ -107,6 +107,11 @@ case class Buckets(dir:File, name:String, bucketSizeFactor:Int) {
     val raf=new RandomAccessFile(bucket,"rws")
     raf.setLength(size)
     raf.close()
+    //alternative... either way, neither seems to work :)
+    //(I bet there's a stream already open)
+    val outChan = new FileOutputStream(bucket, true).getChannel;
+    outChan.truncate(size);
+    outChan.close();
   }
 
 }
