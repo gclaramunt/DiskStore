@@ -19,10 +19,14 @@ class PlainFileDiskStore(f:File) extends DiskStore{
   def get(key: Array[Byte]): Option[Array[Byte]]= None //we're testing the write performance only
   def flush(): Unit = output.flush()
 
+  def close() {
+    output.close()
+  }
+
   def traverse[A](start: Array[Byte], end: Array[Byte])(reader: Reader[A]): A = sys.error("traverse not implemented")
 
 }
 
 object PlainFileDiskStoreSource extends DiskStoreSource {
-  def apply(name: String): DiskStore = new PlainFileDiskStore(new File(name))
+  def apply(name: String) = new PlainFileDiskStore(new File(name))
 }

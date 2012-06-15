@@ -3,8 +3,7 @@ package diskstore.simple
 import annotation.tailrec
 import java.io._
 import collection._
-import diskstore.util.ByteArrayIO
-import diskstore.util.IO
+import diskstore.util.{SpecializedByteArrayOrdering, ByteArrayIO, IO}
 
 /**
  * User: gabriel
@@ -25,15 +24,16 @@ case class ValuesStore(buckets:Buckets) {
    */
   def write(data:Array[Byte]):Ref={
     val bucketId = buckets.bucketId(data)
-    val writeStream = buckets.bucketOutputStream(bucketId,forAppend=true)
-    val insertPos = positions.getOrElse(bucketId, {
-      val length=buckets.file(bucketId).length()
-      positions+=(bucketId->length)
-      length
-    })
-    val writtenBytes=ByteArrayIO.write(data,writeStream)
-    positions(bucketId)+=writtenBytes
-    Ref(bucketId,insertPos)
+    IO.withDataOutputStream(buckets.file(bucketId)){ writeStream =>
+      val insertPos = positions.getOrElse(bucketId, {
+        val length=buckets.file(bucketId).length()
+        positions+=(bucketId->length)
+        length
+      })
+      val writtenBytes=ByteArrayIO.write(data,writeStream)
+      positions(bucketId)+=writtenBytes
+      Ref(bucketId,insertPos)
+    }
   }
 
   /**
@@ -57,11 +57,11 @@ case class ValuesStore(buckets:Buckets) {
     val bucketId=buckets.bucketId(data)
 
     @tailrec
-    def findRec(currentPos:Long,data:Seq[Byte], findStream:DataInputStream):Option[Ref]= {
+    def findRec(currentPos:Long,data:Array[Byte], findStream:DataInputStream):Option[Ref]= {
       val read =ByteArrayIO.read(findStream)
 
       read match {
-        case Some(found) if (data == found.toSeq) => Some(Ref(bucketId,currentPos))
+        case Some(found) if (SpecializedByteArrayOrdering.compare(data,found) == 0) => Some(Ref(bucketId,currentPos))
         case Some(found) => findRec(currentPos+found.length+4,data, findStream)
         case _ => None
       }

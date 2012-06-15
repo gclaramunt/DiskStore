@@ -12,15 +12,15 @@ import java.math.BigInteger
 object PerformanceBenchmark {
 
   def main(args:Array[String]){
-    val timeRandom=compareStores(x=>randomData(10000000)) _
+    val timeRandom=compareStores(x=>randomData(100)) _
     val timeSeq=compareStores(sequencedData _) _
 
     timeRandom(1000)
-    //timeRandom(100000)
+    timeRandom(10000)
     //timeRandom(10000000)
 
     timeSeq(1000)
-    //timeSeq(100000)
+    timeSeq(10000)
     //timeSeq(10000000)
   }
 
@@ -47,7 +47,7 @@ object PerformanceBenchmark {
     }
   }
 
-  def time(f: =>Unit){
+  def time(f: =>Unit)={
     val start=System.currentTimeMillis()
     f
     val end=System.currentTimeMillis()
@@ -56,10 +56,13 @@ object PerformanceBenchmark {
 
   def compareStores(dataFn: Int=>(Array[Byte],Array[Byte]))(runs:Int){
     val writefn= write(dataFn)(runs) _
-    val sds=SimpleDiskStoreSource("ds-perf-test-%s" format runs,32,32)
-    val pfds=PlainFileDiskStoreSource("plain-file-%s" format runs)
+    val sds=SimpleDiskStoreSource("perf/ds-perf-test-%s" format runs)
     val sdstime=time(writefn(sds))
+    sds.close()
+
+    val pfds=PlainFileDiskStoreSource("perf/plain-file-%s" format runs)
     val pfdstime=time(writefn(pfds))
+    pfds.close()
 
     println("Simple Disk Store time %s" format(sdstime))
     println("Plain File Disk Store time %s" format(pfdstime))

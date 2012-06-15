@@ -16,10 +16,18 @@ import diskstore.util.{ByteArrayIO, IO,SpecializedByteArrayOrdering}
 case class KeyStore(buckets:Buckets) {
 
   def write(key:Array[Byte],ref:Ref){
-    val os= buckets.bucketOutputStream(buckets.bucketId(key),forAppend=true)
-    ByteArrayIO.write(key,os)
-    ByteArrayIO.write(ref,os)
+    //val os= buckets.bucketOutputStream(buckets.bucketId(key),forAppend=true)
+    IO.withDataOutputStream(buckets.file(buckets.bucketId(key))){ os =>
+      ByteArrayIO.write(key,os)
+      ByteArrayIO.write(ref,os)
+    }
+
+    if (buckets.bucketId(key)== currentBucketId ) {
+      currentBucket += (key-> ref)
+    }
   }
+
+
 
   def loadBucket(bucketId:String):SortedMap[Array[Byte],Ref]={
 
@@ -40,6 +48,15 @@ case class KeyStore(buckets:Buckets) {
 
   }
 
-  def read(key:Array[Byte]):Option[Ref] = loadBucket(buckets.bucketId(key)).get(key)
+  var currentBucketId = ""
+  var currentBucket = SortedMap[Array[Byte],Ref]()(SpecializedByteArrayOrdering)
+
+  def read(key:Array[Byte]):Option[Ref] = {
+    if (currentBucketId != buckets.bucketId(key)){
+      currentBucketId=buckets.bucketId(key)
+      currentBucket=loadBucket(currentBucketId)
+    }
+    currentBucket.get(key)
+  }
 
 }

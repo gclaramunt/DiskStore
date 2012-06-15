@@ -34,6 +34,22 @@ object IO{
       dis.close()
     }
   }
+
+  /**
+   * Executes a write function with a DataOutputStream and then closes it
+   * @param file file to write
+   * @param write function from DataOutputStream => T that writes into the stream
+   * @tparam T result type of the write (if needed)
+   * @return result of the read function
+   */
+  def withDataOutputStream[T](file: File,forAppend:Boolean=true)(write: DataOutputStream => T):T= {
+    val dos = newDataOutputStream(file, forAppend)
+    try {
+      write(dos)
+    } finally {
+      dos.close()
+    }
+  }
 }
 
 

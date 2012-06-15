@@ -29,7 +29,7 @@ class ByteConversionsTest extends Specification {
       arrToRef(Array[Byte](0, 0, 0, 0, 0, 0, 1, 77, 90, 88)) === Ref("ZX", 333)
     }
 
-    "if I convert back and forth from array I should get the origiganl value" in {
+    "if I convert back and forth from array I should get the original value" in {
       arrToRef(refToArr(Ref("AB", 12))) === Ref("AB", 12)
       arrToRef(refToArr(Ref("ABC", 725))) === Ref("ABC", 725)
       arrToRef(refToArr(Ref("Z", 0))) === Ref("Z", 0)

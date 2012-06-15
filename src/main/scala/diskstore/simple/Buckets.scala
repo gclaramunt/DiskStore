@@ -15,10 +15,12 @@ import annotation.tailrec
 
 case class Buckets(dir:File, name:String, bucketSizeFactor:Int) {
 
-  private[this] var bucketOSMap = Map[String, DataOutputStream]()
+  //private[this] var bucketOSMap = Map[String, DataOutputStream]()
   val zero="ZERO"
 
   def bucketName(id:String)= "%s%s" format (name,id)
+
+  def hexString(bs:Array[Byte])=bs.map( "%02X".format(_) ).mkString
 
   /**
    * Gets the string name of the bucket to store this key
@@ -28,16 +30,15 @@ case class Buckets(dir:File, name:String, bucketSizeFactor:Int) {
    */
   def bucketId(key:Array[Byte])=
     if (key.length <= bucketSizeFactor) zero
-    else "%X".format(new BigInteger(key.dropRight(bucketSizeFactor)))
+    else hexString(key.dropRight(bucketSizeFactor))
 
   /**
    * returns the next bucket in the natural order
    * @param bucket bucket name
    * @return next bucket name
    */
-  def next(bucket:String)=
-    "%X".format ( if (bucket == zero) BigInteger.ZERO
-                  else ((new BigInteger(bucket,16)).add(BigInteger.ONE)))
+  def next(bucket:String)= if (bucket == zero) "0"
+                  else hexString((new BigInteger(bucket,16)).add(BigInteger.ONE).toByteArray)
 
   def file(id: String) = {
     val file = new File(dir, bucketName(id))
@@ -45,29 +46,29 @@ case class Buckets(dir:File, name:String, bucketSizeFactor:Int) {
     file
   }
 
-  def bucketOutputStream(bId: String, forAppend:Boolean=false) = bucketOSMap.getOrElse(bId, {
+  /*def bucketOutputStream(bId: String, forAppend:Boolean=false) = bucketOSMap.getOrElse(bId, {
     val newOS = IO.newDataOutputStream(file(bId),forAppend)
     bucketOSMap += (bId -> newOS)
     newOS
-  })
+  })*/
+
 
   def flush() = {
-    bucketOSMap.values.map(_.flush())
-    recoveryMark()
+    //bucketOSMap.values.map(_.flush())
+    //recoveryMark()
   }
 
   def close() = {
     flush()
-    bucketOSMap.values.map(_.close())
+    //bucketOSMap.values.map(_.close())
     recoveryStrm.close()
   }
 
   val recoveryFile=new File(dir,".recovery-%s". format(name))
   val recoveryStrm = IO.newDataOutputStream(recoveryFile, forAppend = true)
 
-  private def recoveryMark() {
+  /*private def recoveryMark() {
     bucketOSMap.keys.foreach( k => {
-      println("wrote %s %s" format (bucketName(k),file(k).length))
         //write bucket
         ByteArrayIO.write(bucketName(k).getBytes,recoveryStrm)
         //write position on bucket
@@ -75,7 +76,7 @@ case class Buckets(dir:File, name:String, bucketSizeFactor:Int) {
       }
     )
     recoveryStrm.flush()
-  }
+  }*/
 
   private def readRecoveryData()=  {
 
@@ -109,9 +110,9 @@ case class Buckets(dir:File, name:String, bucketSizeFactor:Int) {
     raf.close()
     //alternative... either way, neither seems to work :)
     //(I bet there's a stream already open)
-    val outChan = new FileOutputStream(bucket, true).getChannel;
-    outChan.truncate(size);
-    outChan.close();
+    val outChan = new FileOutputStream(bucket, true).getChannel
+    outChan.truncate(size)
+    outChan.close()
   }
 
 }
