@@ -14,7 +14,7 @@ case class Ref(bucket:String,pos:Long)
 
 case class ValuesStore(buckets:Buckets) {
 
-  var positions = mutable.Map[String, Long]()
+  var positions = Map[String, Long]()
 
   /**
    * Writes the length and the data of the array in the current pos,
@@ -31,7 +31,7 @@ case class ValuesStore(buckets:Buckets) {
         length
       })
       val writtenBytes=ByteArrayIO.write(data,writeStream)
-      positions(bucketId)+=writtenBytes
+      positions+=(bucketId->writtenBytes)
       Ref(bucketId,insertPos)
     }
   }

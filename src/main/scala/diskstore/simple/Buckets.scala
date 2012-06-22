@@ -4,7 +4,7 @@ import scala.collection._
 import java.io._
 import scala.Array
 import java.math.BigInteger
-import diskstore.util.{IO, ByteArrayIO}
+import diskstore.util.{IO, ByteArrayIO, ByteToHex}
 import annotation.tailrec
 
 
@@ -18,9 +18,7 @@ case class Buckets(dir:File, name:String, bucketSizeFactor:Int) {
   //private[this] var bucketOSMap = Map[String, DataOutputStream]()
   val zero="ZERO"
 
-  def bucketName(id:String)= "%s%s" format (name,id)
-
-  def hexString(bs:Array[Byte])=bs.map( "%02X".format(_) ).mkString
+  private def hexString(bs:Array[Byte])=bs.map( ByteToHex(_) ).mkString
 
   /**
    * Gets the string name of the bucket to store this key
@@ -41,7 +39,11 @@ case class Buckets(dir:File, name:String, bucketSizeFactor:Int) {
                   else hexString((new BigInteger(bucket,16)).add(BigInteger.ONE).toByteArray)
 
   def file(id: String) = {
-    val file = new File(dir, bucketName(id))
+    val (prefix,fileName) = if (id.length <=bucketSizeFactor || id == zero)  ("",id) else id.splitAt(bucketSizeFactor)
+    val path =  name +"/" + prefix.grouped(bucketSizeFactor).map(_.mkString).mkString("/")
+    val dirs = new File(dir,path)
+    dirs.mkdirs()
+    val file = new File(dirs,fileName)
     file.createNewFile()
     file
   }

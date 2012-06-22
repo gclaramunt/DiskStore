@@ -17,11 +17,11 @@ object PerformanceBenchmark {
 
     timeRandom(1000)
     timeRandom(10000)
-    //timeRandom(10000000)
+    //timeRandom(1000000)
 
     timeSeq(1000)
     timeSeq(10000)
-    //timeSeq(10000000)
+    //timeSeq(1000000)
   }
 
   def random(size:Int)={
