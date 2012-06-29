@@ -15,13 +15,14 @@ object PerformanceBenchmark {
     val timeRandom=compareStores(x=>randomData(100)) _
     val timeSeq=compareStores(sequencedData _) _
 
-    timeRandom(1000)
-    timeRandom(10000)
-    //timeRandom(1000000)
+    val loadSizes=List(1000,10000,100000)
 
-    timeSeq(1000)
-    timeSeq(10000)
-    //timeSeq(1000000)
+    println("random key/values")
+    loadSizes.foreach( timeRandom)
+
+    println("sequential key/values")
+    loadSizes.foreach( timeSeq)
+
   }
 
   def random(size:Int)={
@@ -66,6 +67,7 @@ object PerformanceBenchmark {
 
     println("Simple Disk Store time %s" format(sdstime))
     println("Plain File Disk Store time %s" format(pfdstime))
+    println("Ratio store vs file = %.4f " format (sdstime.toFloat/pfdstime))
   }
 
 

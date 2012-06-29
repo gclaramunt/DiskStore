@@ -15,10 +15,9 @@ import annotation.tailrec
 
 case class Buckets(dir:File, name:String, bucketSizeFactor:Int) {
 
-  //private[this] var bucketOSMap = Map[String, DataOutputStream]()
   val zero="ZERO"
 
-  private def hexString(bs:Array[Byte])=bs.map( ByteToHex(_) ).mkString
+  private final def hexString(bs:Array[Byte])=bs.map( ByteToHex(_) ).mkString
 
   /**
    * Gets the string name of the bucket to store this key
@@ -38,15 +37,19 @@ case class Buckets(dir:File, name:String, bucketSizeFactor:Int) {
   def next(bucket:String)= if (bucket == zero) "0"
                   else hexString((new BigInteger(bucket,16)).add(BigInteger.ONE).toByteArray)
 
-  def file(id: String) = {
-    val (prefix,fileName) = if (id.length <=bucketSizeFactor || id == zero)  ("",id) else id.splitAt(bucketSizeFactor)
-    val path =  name +"/" + prefix.grouped(bucketSizeFactor).map(_.mkString).mkString("/")
-    val dirs = new File(dir,path)
-    dirs.mkdirs()
-    val file = new File(dirs,fileName)
-    file.createNewFile()
-    file
-  }
+  var files=Map[String,File]()
+
+  def file(id: String) = files.get(id).getOrElse({
+      val (prefix,fileName) = if (id.length <=bucketSizeFactor || id == zero)  ("",id) else id.splitAt(bucketSizeFactor)
+      val path =  name +"/" + prefix.grouped(bucketSizeFactor).map(_.mkString).mkString("/")
+      val dirs = new File(dir,path)
+      dirs.mkdirs()
+      val file = new File(dirs,fileName)
+      file.createNewFile()
+      files+=(id->file)
+      file
+    }
+  )
 
   /*def bucketOutputStream(bId: String, forAppend:Boolean=false) = bucketOSMap.getOrElse(bId, {
     val newOS = IO.newDataOutputStream(file(bId),forAppend)
